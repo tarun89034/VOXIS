@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import VoiceVisualizer from '@/components/VoiceVisualizer';
 import ChatInterface from '@/components/ChatInterface';
 import VoiceControls from '@/components/VoiceControls';
@@ -15,12 +15,15 @@ export default function VoiceAssistant() {
   const [isTyping, setIsTyping] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [showSystemInfo, setShowSystemInfo] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const autoTurnOffRef = useRef<NodeJS.Timeout>();
   
   // Mock chat messages for demo //todo: remove mock functionality
   const [messages, setMessages] = useState<Omit<ChatMessageProps, 'onPlay' | 'onCopy' | 'onSearchWeb'>[]>([
     {
       id: '1',
-      content: 'Hello! I\'m your AI voice assistant. How can I help you today?',
+      content: 'Hello! I\'m VOXIS, your AI voice assistant. Say "arise" to activate me or "sleep" to deactivate. How can I help you today?',
       sender: 'assistant',
       timestamp: new Date(Date.now() - 60000),
       showWebSearch: false
@@ -39,7 +42,94 @@ export default function VoiceAssistant() {
     }
   }, [isListening, isSpeaking]);
 
+  // Auto-turn off functionality
+  useEffect(() => {
+    if (isActive && !isListening && !isSpeaking) {
+      // Auto turn off after 60 seconds of inactivity
+      autoTurnOffRef.current = setTimeout(() => {
+        setIsActive(false);
+        setIsMinimized(true);
+        console.log('VOXIS auto-sleep after inactivity');
+      }, 60000);
+    } else {
+      if (autoTurnOffRef.current) {
+        clearTimeout(autoTurnOffRef.current);
+      }
+    }
+
+    return () => {
+      if (autoTurnOffRef.current) {
+        clearTimeout(autoTurnOffRef.current);
+      }
+    };
+  }, [isActive, isListening, isSpeaking]);
+
+  // Voice command simulation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Demo: Press 'A' for "arise", 'S' for "sleep", 'M' for minimize toggle
+      if (e.key.toLowerCase() === 'a') {
+        handleAriseCommand();
+      } else if (e.key.toLowerCase() === 's') {
+        handleSleepCommand();
+      } else if (e.key.toLowerCase() === 'm') {
+        setIsMinimized(!isMinimized);
+      }
+    };
+
+    window.addEventListener('keypress', handleKeyPress);
+    return () => window.removeEventListener('keypress', handleKeyPress);
+  }, [isMinimized]);
+
+  const handleAriseCommand = () => {
+    setIsActive(true);
+    setIsMinimized(false);
+    setIsListening(true);
+    
+    // Add system message
+    const ariseMessage = {
+      id: Date.now().toString(),
+      content: 'VOXIS activated. I\'m ready to assist you.',
+      sender: 'assistant' as const,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, ariseMessage]);
+    
+    setTimeout(() => setIsListening(false), 2000);
+  };
+
+  const handleSleepCommand = () => {
+    setIsActive(false);
+    setIsListening(false);
+    setIsSpeaking(false);
+    setIsMinimized(true);
+    
+    // Add system message
+    const sleepMessage = {
+      id: Date.now().toString(),
+      content: 'VOXIS going to sleep. Say "arise" to reactivate.',
+      sender: 'assistant' as const,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, sleepMessage]);
+  };
+
   const handleSendMessage = (message: string) => {
+    // Check for voice commands
+    if (message.toLowerCase().includes('arise')) {
+      handleAriseCommand();
+      return;
+    }
+    if (message.toLowerCase().includes('sleep')) {
+      handleSleepCommand();
+      return;
+    }
+
+    // Don't process messages if not active
+    if (!isActive) {
+      return;
+    }
+
     // Add user message
     const userMessage = {
       id: Date.now().toString(),
@@ -54,10 +144,10 @@ export default function VoiceAssistant() {
     setIsTyping(true);
     setTimeout(() => {
       const responses = [
-        "I understand you're asking about: \"" + message + "\". In a full implementation, I would process this using advanced AI and provide detailed responses with optional web search integration.",
-        "That's an interesting question! I would analyze your request and provide comprehensive information, possibly suggesting: \"Would you like me to search this on the web?\"",
-        "I can help you with that! In the complete system, I would use speech recognition, AI processing, and text-to-speech to provide a seamless voice interaction experience.",
-        "Great question! I would search my knowledge base and potentially web sources to give you the most current and accurate information about: \"" + message + "\""
+        "VOXIS here! I understand you're asking about: \"" + message + "\". In a full implementation, I would process this using advanced AI and provide detailed responses with optional web search integration.",
+        "That's an interesting question! VOXIS would analyze your request and provide comprehensive information, possibly suggesting: \"Would you like me to search this on the web?\"",
+        "I can help you with that! VOXIS uses speech recognition, AI processing, and text-to-speech to provide a seamless voice interaction experience.",
+        "Great question! VOXIS would search knowledge bases and web sources to give you the most current and accurate information about: \"" + message + "\""
       ];
       
       const aiMessage = {
@@ -80,18 +170,25 @@ export default function VoiceAssistant() {
   };
 
   const handleToggleMic = () => {
+    if (!isActive) {
+      handleAriseCommand();
+      return;
+    }
+
     setIsListening(!isListening);
     if (isSpeaking) setIsSpeaking(false);
     
     // Simulate voice recognition with mock message //todo: remove mock functionality
     if (!isListening) {
       setTimeout(() => {
-        if (Math.random() > 0.7) {
+        if (Math.random() > 0.6) {
           const voiceQueries = [
             "What's the weather like today?",
             "Tell me about machine learning",
             "How do quantum computers work?",
-            "Search for recent AI developments"
+            "Search for recent AI developments",
+            "arise",
+            "sleep"
           ];
           handleSendMessage(voiceQueries[Math.floor(Math.random() * voiceQueries.length)]);
         }
@@ -112,18 +209,73 @@ export default function VoiceAssistant() {
     setShowSystemInfo(!showSystemInfo);
   };
 
+  // Minimized mode - only show waveform
+  if (isMinimized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center relative">
+        <div 
+          className="cursor-pointer"
+          onClick={() => setIsMinimized(false)}
+          data-testid="button-expand"
+        >
+          <VoiceVisualizer
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+            audioLevel={audioLevel}
+            isMinimized={true}
+          />
+        </div>
+        
+        {/* Minimized controls overlay */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+          <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-card-border rounded-full px-4 py-2">
+            <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-xs text-muted-foreground">
+              {isActive ? 'VOXIS Active' : 'VOXIS Sleeping'}
+            </span>
+            <span className="text-xs text-muted-foreground/60">• Click to expand</span>
+          </div>
+        </div>
+        
+        {/* Demo instructions overlay */}
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="bg-card/80 backdrop-blur-sm border border-card-border rounded-lg px-4 py-3">
+            <p className="text-sm text-muted-foreground mb-2">Demo Controls:</p>
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span>Press 'A' for "arise"</span>
+              <span>Press 'S' for "sleep"</span>
+              <span>Press 'M' to toggle minimize</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <div className="w-4 h-4 rounded-full bg-background/80" />
+            <span className="text-xs font-bold text-white">V</span>
           </div>
-          <h1 className="text-xl font-semibold">Voice Assistant</h1>
+          <h1 className="text-xl font-semibold">VOXIS</h1>
+          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+            isActive ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
+          }`}>
+            {isActive ? 'Active' : 'Sleeping'}
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMinimized(true)}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-md hover-elevate"
+            data-testid="button-minimize"
+          >
+            Minimize
+          </button>
           <button
             onClick={() => setShowChat(!showChat)}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-md hover-elevate"
@@ -145,6 +297,7 @@ export default function VoiceAssistant() {
               isListening={isListening}
               isSpeaking={isSpeaking}
               audioLevel={audioLevel}
+              isMinimized={false}
             />
           </div>
 
@@ -163,13 +316,20 @@ export default function VoiceAssistant() {
           {/* Status Message */}
           <div className="mt-6 text-center max-w-md">
             <p className="text-sm text-muted-foreground">
-              {isListening 
-                ? "Listening... Speak your command or question"
-                : isSpeaking 
-                  ? "Speaking... Assistant is responding"
-                  : "Ready to assist. Click the microphone or type your message"
+              {!isActive 
+                ? 'VOXIS is sleeping. Say "arise" or click the microphone to activate'
+                : isListening 
+                  ? "VOXIS is listening... Speak your command or question"
+                  : isSpeaking 
+                    ? "VOXIS is responding..."
+                    : 'VOXIS is ready. Say "sleep" to deactivate or ask me anything'
               }
             </p>
+            
+            {/* Demo Instructions */}
+            <div className="mt-4 text-xs text-muted-foreground/60">
+              <p>Demo: Press 'A' for "arise" • Press 'S' for "sleep" • Press 'M' to minimize</p>
+            </div>
           </div>
 
           {/* System Info Overlay */}
@@ -185,13 +345,15 @@ export default function VoiceAssistant() {
           <div className="w-96 border-l border-border">
             <ChatInterface
               messages={messages}
-              isTyping={isTyping}
+              isTyping={isTyping && isActive}
               onSendMessage={handleSendMessage}
               onClearHistory={() => setMessages([])}
               onPlayMessage={(id) => {
                 console.log('Playing message:', id);
-                setIsSpeaking(true);
-                setTimeout(() => setIsSpeaking(false), 2000);
+                if (isActive) {
+                  setIsSpeaking(true);
+                  setTimeout(() => setIsSpeaking(false), 2000);
+                }
               }}
               onCopyMessage={(id) => {
                 const message = messages.find(m => m.id === id);
