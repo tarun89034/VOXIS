@@ -1,4 +1,4 @@
-import SystemInfo from '../SystemInfo';
+import SystemInfo from "../SystemInfo";
 
 export default function SystemInfoExample() {
   return (
