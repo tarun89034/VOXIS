@@ -43,10 +43,21 @@ VOXIS is a powerful, privacy-focused voice assistant built with TypeScript. It o
 
 ## Technology Stack
 
-- **Main language:** TypeScript
-- **Frontend:** TypeScript, CSS, Web Audio API (for visualizer)
-- **Backend:** TypeScript/Node.js (for local actions, Brave Search API integration)
-- **Memory:** In-memory or persistent storage for chat history/user info
+- **Language:** TypeScript
+- **Frontend:** 
+  - React 18 with Wouter for routing
+  - Tailwind CSS for styling
+  - Radix UI components
+  - Framer Motion for animations
+  - Web Speech API for voice recognition and synthesis
+- **Backend:** 
+  - Node.js with Express
+  - OpenAI API (GPT-5) for AI responses
+  - Zod for validation
+- **Build Tools:**
+  - Vite for frontend bundling
+  - tsx for TypeScript execution
+  - esbuild for backend bundling
 
 ---
 
@@ -55,33 +66,39 @@ VOXIS is a powerful, privacy-focused voice assistant built with TypeScript. It o
 ```plaintext
 VOXIS/
 │
-├── src/
-│   ├── components/
-│   │   ├── VoiceVisualizer.tsx      # Animated circle visualizer component
-│   │   ├── ChatWindow.tsx           # Main chat UI
-│   │   ├── MicrophoneInput.tsx      # Handles mic input
-│   │   └── ...                      # Other UI components
-│   ├── backend/
-│   │   ├── index.ts                 # Main backend entry
-│   │   ├── localActions.ts          # Local system command handlers
-│   │   ├── braveSearch.ts           # Brave Search API integration
-│   │   ├── memory.ts                # Chat/user info storage
-│   │   └── ...                      # Other backend modules
-│   ├── utils/
-│   │   ├── speechToText.ts          # Speech recognition helpers
-│   │   ├── textToSpeech.ts          # TTS helpers
-│   │   └── ...
-│   ├── App.tsx                      # Main app entry
-│   └── index.tsx                    # React entrypoint
+├── client/                           # Frontend application
+│   ├── src/
+│   │   ├── components/               # React components
+│   │   │   ├── VoiceVisualizer.tsx   # Animated circle visualizer
+│   │   │   ├── ChatInterface.tsx     # Chat UI
+│   │   │   ├── VoiceControls.tsx     # Voice control buttons
+│   │   │   ├── SystemInfo.tsx        # System information display
+│   │   │   └── ui/                   # Reusable UI components
+│   │   ├── pages/
+│   │   │   └── VoiceAssistant.tsx    # Main voice assistant page
+│   │   ├── hooks/
+│   │   │   ├── useSpeechRecognition.ts  # Speech recognition hook
+│   │   │   └── useSpeechSynthesis.ts    # Text-to-speech hook
+│   │   ├── App.tsx                   # Main app component
+│   │   └── main.tsx                  # React entry point
+│   └── index.html                    # HTML template
 │
-├── public/
-│   ├── index.html                   # App HTML template
-│   └── ...
+├── server/                           # Backend server
+│   ├── index.ts                      # Express server entry
+│   ├── routes.ts                     # API routes
+│   ├── lib/
+│   │   └── openai.ts                 # OpenAI integration
+│   ├── storage.ts                    # Data storage
+│   └── vite.ts                       # Vite dev server setup
 │
-├── package.json
-├── tsconfig.json
-├── README.md
-└── ...
+├── shared/
+│   └── schema.ts                     # Shared types and schemas
+│
+├── .env.example                      # Environment variables template
+├── package.json                      # Dependencies and scripts
+├── tsconfig.json                     # TypeScript configuration
+├── vite.config.ts                    # Vite configuration
+└── README.md                         # This file
 ```
 
 ---
@@ -99,12 +116,27 @@ VOXIS/
    npm install
    ```
 
-3. **Set up Brave Search API**
-   - Sign up for a free API key at [Brave Search API](https://search.brave.com/api).
-   - Add your key to backend config (e.g., `.env` or `config.ts`).
+3. **Set up environment variables**
+   - Copy the example environment file:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and add your OpenAI API key:
+     ```
+     OPENAI_API_KEY=your_actual_openai_api_key_here
+     ```
+   - Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - Optionally update the SESSION_SECRET with a secure random string
 
-4. **Run the app**
+4. **Run the development server**
    ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:5000`
+
+5. **Build for production** (optional)
+   ```bash
+   npm run build
    npm start
    ```
 
@@ -112,9 +144,11 @@ VOXIS/
 
 ## Customization
 
-- Add new local actions by extending `src/backend/localActions.ts`.
-- Change visualizer appearance in `src/components/VoiceVisualizer.tsx`.
-- Enhance memory by updating `src/backend/memory.ts`.
+- Modify OpenAI integration in `server/lib/openai.ts`
+- Add new API routes in `server/routes.ts`
+- Change visualizer appearance in `client/src/components/VoiceVisualizer.tsx`
+- Add new UI components in `client/src/components/`
+- Update voice assistant behavior in `client/src/pages/VoiceAssistant.tsx`
 
 ---
 
