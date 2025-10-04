@@ -13,10 +13,14 @@ import {
 
 interface VoiceControlsProps {
   isListening?: boolean;
+  isSpeaking?: boolean;
   isMuted?: boolean;
+  isActive?: boolean;
   connectionStatus?: 'connected' | 'connecting' | 'disconnected';
   onToggleMic?: () => void;
   onToggleMute?: () => void;
+  onActivate?: () => void;
+  onDeactivate?: () => void;
   onSettings?: () => void;
   onWebSearch?: () => void;
   onSystemInfo?: () => void;
@@ -25,10 +29,14 @@ interface VoiceControlsProps {
 
 export default function VoiceControls({
   isListening = false,
+  isSpeaking = false,
   isMuted = false,
+  isActive = false,
   connectionStatus = 'connected',
   onToggleMic,
   onToggleMute,
+  onActivate,
+  onDeactivate,
   onSettings,
   onWebSearch,
   onSystemInfo,

@@ -5,13 +5,15 @@ interface VoiceVisualizerProps {
   isSpeaking?: boolean;
   audioLevel?: number;
   isMinimized?: boolean;
+  isActive?: boolean;
 }
 
 export default function VoiceVisualizer({ 
   isListening = false, 
   isSpeaking = false,
   audioLevel = 0,
-  isMinimized = false
+  isMinimized = false,
+  isActive = false
 }: VoiceVisualizerProps) {
   const [waveData, setWaveData] = useState<number[]>(Array(24).fill(0));
   const [innerWaveData, setInnerWaveData] = useState<number[]>(Array(16).fill(0));

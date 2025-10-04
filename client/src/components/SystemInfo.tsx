@@ -4,10 +4,22 @@ import { Badge } from '@/components/ui/badge';
 import { Monitor, Clock, Globe, Cpu } from 'lucide-react';
 
 interface SystemInfoProps {
+  isActive?: boolean;
+  isListening?: boolean;
+  isSpeaking?: boolean;
+  connectionStatus?: 'connected' | 'connecting' | 'disconnected';
+  audioLevel?: number;
   className?: string;
 }
 
-export default function SystemInfo({ className = '' }: SystemInfoProps) {
+export default function SystemInfo({ 
+  isActive = false,
+  isListening = false,
+  isSpeaking = false,
+  connectionStatus = 'connected',
+  audioLevel = 0,
+  className = '' 
+}: SystemInfoProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [systemData, setSystemData] = useState({
     browser: '',
