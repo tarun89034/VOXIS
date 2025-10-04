@@ -362,7 +362,7 @@ export default function VoiceAssistant() {
                   isSpeaking={isSpeaking}
                   isActive={isActive}
                   audioLevel={audioLevel}
-                  size={isMinimized ? 200 : 300}
+                  isMinimized={isMinimized}
                   data-testid="voice-visualizer"
                 />
               </div>
